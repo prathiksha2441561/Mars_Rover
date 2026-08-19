@@ -10,6 +10,8 @@ build/
 .venv
 venv/
 *.log
+~$*.docx
+~$*.doc
 .DS_Store
 Thumbs.db
 node_modules/
