@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autonomous Mars Rover — Propositional Logic KBA</title>
+<meta name="description" content="Autonomous Mars Rover Knowledge-Based Agent using Propositional Logic. Demonstrates TELL/ASK/INFER, Resolution, Forward Chaining, and Model Checking.">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0500;
+    --panel: #120800;
+    --panel2: #0d0600;
+    --border: #3d1a00;
+    --accent: #ff7a00;
+    --accent2: #ff4500;
+    --safe: #00c844;
+    --hazard: #ff2222;
+    --radiation: #ff8800;
+    --unknown: #555;
+    --goal: #ffd700;
+    --rover: #00aaff;
+    --visited: #005555;
+    --text: #ffaa55;
+    --dim: #663300;
+    --tell: #44ff88;
+    --ask: #88ccff;
+    --result: #ffff44;
+    --infer: #ff88ff;
+    --mono: 'Share Tech Mono', monospace;
+    --title: 'Orbitron', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #1a0500 0%, #2d0a00 50%, #1a0500 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(255,100,0,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-title {
+    font-family: var(--title);
+    font-size: clamp(14px, 2.5vw, 22px);
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(255,122,0,0.5);
+  }
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+  /* Layout */
+  .main {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr auto;
+    gap: 8px;
+    padding: 8px;
+    height: calc(100vh - 70px);
+    min-height: 600px;
+  }
+  /* Left: Grid */
+  .grid-panel {
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .grid-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .grid-label {
+    font-family: var(--title);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  #marsGrid {
+    display: grid;
+    gap: 2px;
+    /* cols set by JS */
+  }
+  .cell {
+    width: 72px; height: 72px;
+    border-radius: 6px;
+    border: 1px solid #2a1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .cell::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  }
+  .cell-coord {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: rgba(255,255,255,0.3);
+    position: absolute;
+    top: 3px; left: 4px;
+  }
+  .cell-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+  .cell-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+  /* Cell types */
+  .cell-safe     { background: #0a200a; border-color: #1a4a1a; }
+  .cell-safe .cell-label { color: var(--safe); }
+  .cell-hazard   { background: #2a0000; border-color: #6a0000; }
+  .cell-hazard .cell-label { color: var(--hazard); }
+  .cell-radiation{ background: #2a1000; border-color: #6a3000; }
+  .cell-radiation .cell-label { color: var(--radiation); }
+  .cell-unknown  { background: #111; border-color: var(--unknown); }
+  .cell-unknown .cell-label { color: var(--unknown); }
+  .cell-start    { background: #050520; border-color: #1a1a6b; }
+  .cell-start .cell-label { color: #8888ff; }
+  .cell-goal     { background: #1a1400; border-color: #6a5500; }
+  .cell-goal .cell-label { color: var(--goal); }
+  .cell-visited  { background: #002020; border-color: #005555; }
+  .cell-visited .cell-label { color: #339999; }
+  .cell-rover    {
+    background: #001a33;
+    border: 2px solid var(--rover) !important;
+    box-shadow: 0 0 12px rgba(0,170,255,0.4), inset 0 0 8px rgba(0,170,255,0.1);
+    animation: roverPulse 1.5s ease-in-out infinite;
+  }
+  .cell-rover .cell-label { color: var(--rover); }
+  @keyframes roverPulse {
+    0%,100% { box-shadow: 0 0 12px rgba(0,170,255,0.4), inset 0 0 8px rgba(0,170,255,0.1); }
+    50% { box-shadow: 0 0 20px rgba(0,170,255,0.7), inset 0 0 15px rgba(0,170,255,0.2); }
+  }
+  /* Right: Panels */
+  .right-col {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 6px;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .panel-header {
+    background: var(--panel2);
+    padding: 6px 12px;
+    font-family: var(--title);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .panel-header .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    padding: 6px;
+  }
+  .info-item {
+    padding: 5px 8px;
+    background: rgba(255,100,0,0.04);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .info-key {
+    font-size: 9px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: var(--mono);
+  }
+  .info-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .info-val.rover-pos { color: var(--rover); }
+  .info-val.goal-pos  { color: var(--goal); }
+  .info-val.safe-col  { color: var(--safe); }
+  .info-val.warn-col  { color: var(--hazard); }
+  .info-val.accent    { color: var(--accent); }
+  /* KB Log */
+  .kb-scroll {
+    height: 100%;
+    overflow-y: auto;
+    padding: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+    scroll-behavior: smooth;
+  }
+  .kb-scroll::-webkit-scrollbar { width: 4px; }
+  .kb-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .kb-line-step  { color: var(--accent); font-weight: bold; margin-top: 8px; }
+  .kb-line-tell  { color: var(--tell); }
+  .kb-line-ask   { color: var(--ask); }
+  .kb-line-result{ color: var(--result); }
+  .kb-line-infer { color: var(--infer); }
+  .kb-line-rule  { color: #88ff88; }
+  .kb-line-dim   { color: var(--dim); }
+  .kb-line-accept{ color: var(--safe); }
+  .kb-line-reject{ color: var(--hazard); }
+  /* Explain panel */
+  .explain-scroll {
+    padding: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.7;
+    max-height: 180px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+  .explain-scroll::-webkit-scrollbar { width: 4px; }
+  .explain-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .explain-head { color: var(--accent); font-weight: bold; }
+  .explain-accept { color: var(--safe); }
+  .explain-reject { color: var(--hazard); }
+  .explain-chosen { color: var(--result); font-weight: bold; }
+  /* Controls */
+  .controls {
+    background: linear-gradient(135deg, #1a0500, #2d0a00);
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--title);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+  }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-start { background: #003300; color: #00ff44; border: 1px solid #006600; }
+  .btn-start:hover:not(:disabled) { background: #004400; box-shadow: 0 0 12px rgba(0,255,68,0.3); }
+  .btn-step  { background: #001a33; color: #44aaff; border: 1px solid #003366; }
+  .btn-step:hover:not(:disabled) { background: #002244; box-shadow: 0 0 12px rgba(68,170,255,0.3); }
+  .btn-pause { background: #1a1400; color: #ffbb00; border: 1px solid #443300; }
+  .btn-pause:hover:not(:disabled) { background: #221900; box-shadow: 0 0 12px rgba(255,187,0,0.3); }
+  .btn-reset { background: #1a0000; color: #ff4444; border: 1px solid #440000; }
+  .btn-reset:hover:not(:disabled) { background: #220000; box-shadow: 0 0 12px rgba(255,68,68,0.3); }
+  /* Speed */
+  .speed-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    color: var(--dim);
+    font-size: 10px;
+    font-family: var(--mono);
+  }
+  input[type=range] {
+    width: 100px;
+    accent-color: var(--accent);
+  }
+  /* Status bar */
+  .status-bar {
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--dim);
+    transition: background 0.3s;
+  }
+  .status-dot.active { background: var(--safe); box-shadow: 0 0 6px var(--safe); }
+  .status-dot.done   { background: var(--goal); box-shadow: 0 0 6px var(--goal); }
+  /* Mission complete overlay */
+  .mission-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.5s ease;
+  }
+  .mission-overlay.show { display: flex; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .mission-box {
+    background: var(--panel);
+    border: 2px solid var(--goal);
+    border-radius: 12px;
+    padding: 30px 40px;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(255,215,0,0.2);
+    animation: slideUp 0.5s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .mission-title {
+    font-family: var(--title);
+    font-size: 24px;
+    color: var(--goal);
+    text-shadow: 0 0 20px rgba(255,215,0,0.5);
+    margin-bottom: 8px;
+  }
+  .mission-metrics {
+    background: #0a0500;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: left;
+    line-height: 2;
+  }
+  .metric-row { display: flex; justify-content: space-between; }
+  .metric-key { color: var(--dim); }
+  .metric-val { color: var(--accent); font-weight: bold; }
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 9px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  /* Responsive */
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; grid-template-rows: auto auto; }
+    .grid-panel { grid-row: 1; }
+    .right-col { grid-row: 2; }
+    .cell { width: 50px; height: 50px; }
+    .cell-icon { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">🚀 AUTONOMOUS MARS ROVER — PROPOSITIONAL LOGIC KBA</div>
+  <div class="header-sub">Unit 3: Logical Agents &nbsp;|&nbsp; PERCEIVE → TELL(KB) → INFER → ASK(KB) → DECIDE → ACT → SUCCESSOR STATE</div>
+</header>
+
+<div class="main">
+  <!-- LEFT: Grid -->
+  <div class="grid-panel">
+    <div class="grid-wrap">
+      <div class="grid-label">MARS TERRAIN — 7×7 GRID</div>
+      <div id="marsGrid"></div>
+    </div>
+    <!-- Legend -->
+    <div class="panel">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#001a33;border-color:#00aaff;"></div> ROVER</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0a200a;border-color:#1a4a1a;"></div> SAFE</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2a0000;border-color:#6a0000;"></div> HAZARD</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2a1000;border-color:#6a3000;"></div> RADIATION</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#111;border-color:#555;"></div> UNKNOWN</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1a1400;border-color:#6a5500;"></div> GOAL</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#002020;border-color:#005555;"></div> VISITED</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Panels -->
+  <div class="right-col">
+    <!-- Info panel -->
+    <div class="panel">
+      <div class="panel-header"><span class="dot"></span>ROVER STATUS & METRICS</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-key">Position</div><div class="info-val rover-pos" id="iPos">(0,0)</div></div>
+        <div class="info-item"><div class="info-key">Goal</div><div class="info-val goal-pos" id="iGoal">(6,6)</div></div>
+        <div class="info-item"><div class="info-key">Status</div><div class="info-val accent" id="iStatus">IDLE</div></div>
+        <div class="info-item"><div class="info-key">KB Facts</div><div class="info-val" id="iKbFacts">0</div></div>
+        <div class="info-item"><div class="info-key">Decision</div><div class="info-val safe-col" id="iDecision">—</div></div>
+        <div class="info-item"><div class="info-key">KB Clauses</div><div class="info-val" id="iKbClauses">0</div></div>
+        <div class="info-item"><div class="info-key">Moves</div><div class="info-val" id="iMoves">0</div></div>
+        <div class="info-item"><div class="info-key">Path Cost</div><div class="info-val" id="iCost">0</div></div>
+        <div class="info-item"><div class="info-key">Inferences</div><div class="info-val" id="iInf">0</div></div>
+        <div class="info-item"><div class="info-key">Resolution Ops</div><div class="info-val" id="iRes">0</div></div>
+        <div class="info-item"><div class="info-key">Unsafe Rejected</div><div class="info-val warn-col" id="iRej">0</div></div>
+        <div class="info-item"><div class="info-key">Cells Visited</div><div class="info-val" id="iCells">0</div></div>
+      </div>
+    </div>
+
+    <!-- KB Log -->
+    <div class="panel" style="overflow:hidden;display:flex;flex-direction:column;">
+      <div class="panel-header"><span class="dot"></span>KNOWLEDGE BASE LOG — TELL / ASK / INFER / RESULT</div>
+      <div class="kb-scroll" id="kbLog">
+        <div class="kb-line-dim">⬡ Knowledge Base initialized.</div>
+        <div class="kb-line-tell">  TELL: At_0_0</div>
+        <div class="kb-line-tell">  TELL: Safe_0_0</div>
+        <div class="kb-line-rule">  RULE: Hazard_x_y → ¬MoveForward_x_y</div>
+        <div class="kb-line-rule">  RULE: Radiation_x_y → ¬Enter_x_y</div>
+        <div class="kb-line-rule">  RULE: Safe ∧ ¬Hazard ∧ ¬Radiation → CanMove</div>
+        <div class="kb-line-rule">  RULE: At_6_6 → MissionComplete</div>
+        <div class="kb-line-dim">  Waiting for mission start...</div>
+      </div>
+    </div>
+
+    <!-- Explain panel -->
+    <div class="panel">
+      <div class="panel-header"><span class="dot" style="background:var(--infer);box-shadow:0 0 6px var(--infer);animation:none;"></span>WHY DID THE ROVER MOVE? — EDUCATIONAL EXPLANATION</div>
+      <div class="explain-scroll" id="explainLog">
+        <div class="explain-head">Decision explanation will appear here after each step.</div>
+        <div style="color:var(--dim);margin-top:6px;">Each candidate direction is evaluated by the KB using resolution-based inference (KB ⊨ CanMove_x_y).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="btn btn-start" id="btnStart" onclick="cmdStart()">▶ START MISSION</button>
+  <button class="btn btn-step"  id="btnStep"  onclick="cmdStep()">⟶ STEP</button>
+  <button class="btn btn-pause" id="btnPause" onclick="cmdPause()" disabled>⏸ PAUSE</button>
+  <button class="btn btn-reset" id="btnReset" onclick="cmdReset()">↺ RESET</button>
+  <div class="speed-wrap">
+    SPEED: <input type="range" id="speedSlider" min="100" max="2000" value="800" oninput="updateSpeed(this.value)">
+    <span id="speedLabel">800ms</span>
+  </div>
+</div>
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">Ready — Click START MISSION to begin</span>
+</div>
+
+<!-- Mission Complete Overlay -->
+<div class="mission-overlay" id="missionOverlay">
+  <div class="mission-box">
+    <div class="mission-title">★ MISSION COMPLETE ★</div>
+    <div style="color:var(--dim);font-family:var(--mono);font-size:11px;margin-bottom:12px;">KB ⊨ MissionComplete — Rule 5 Activated: At_6_6 → MissionComplete</div>
+    <div class="mission-metrics" id="metricsBox"></div>
+    <button class="btn btn-reset" onclick="cmdReset();document.getElementById('missionOverlay').classList.remove('show')" style="margin:0 auto;display:block;">↺ NEW MISSION</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  PROPOSITIONAL LOGIC ENGINE — Full JavaScript Implementation
+// ============================================================
+
+// --- Literal ---
+class Literal {
+  constructor(symbol, positive = true) {
+    this.symbol = symbol;
+    this.positive = positive;
+    this.key = (positive ? '' : '¬') + symbol;
+  }
+  negate() { return new Literal(this.symbol, !this.positive); }
+  isComplementOf(other) { return this.symbol === other.symbol && this.positive !== other.positive; }
+  toString() { return this.key; }
+}
+
+// --- Clause (CNF) ---
+class Clause {
+  constructor(literals) {
+    this.literals = new Set([...literals].map(l => l.key));
+    this._lits = [...literals];
+    this.key = [...this.literals].sort().join('|');
+  }
+  isEmpty() { return this.literals.size === 0; }
+  isTautology() {
+    for (const lit of this._lits) {
+      const comp = lit.negate().key;
+      if (this.literals.has(comp)) return true;
+    }
+    return false;
+  }
+  toString() {
+    if (this.isEmpty()) return '{}';
+    return [...this._lits].map(l => l.toString()).join(' ∨ ');
+  }
+}
+
+// --- Resolution Engine ---
+class ResolutionEngine {
+  resolve(kbClauses, queryLiteral) {
+    const steps = [];
+    let resOps = 0;
+    const negQuery = queryLiteral.negate();
+    const negClause = new Clause([negQuery]);
+
+    steps.push(`QUERY: KB ⊨ ${queryLiteral} ?`);
+    steps.push(`NEGATED QUERY: ${negQuery}`);
+
+    const clauseSet = new Map();
+    for (const c of kbClauses) clauseSet.set(c.key, c);
+    clauseSet.set(negClause.key, negClause);
+
+    const MAX_ITER = 50;
+    for (let iter = 0; iter < MAX_ITER; iter++) {
+      const cList = [...clauseSet.values()];
+      const newClauses = new Map();
+      let found = false;
+
+      for (let i = 0; i < cList.length && !found; i++) {
+        for (let j = i + 1; j < cList.length && !found; j++) {
+          const resolvents = this._resolvePair(cList[i], cList[j]);
+          resOps += resolvents.length;
+          for (const r of resolvents) {
+            if (r.isEmpty()) {
+              steps.push(`RESOLUTION: ${cList[i]} + ${cList[j]} → {} (contradiction!)`);
+              steps.push('CONCLUSION: ENTAILED ✓');
+              return { entailed: true, steps, resOps };
+            }
+            if (!clauseSet.has(r.key)) newClauses.set(r.key, r);
+          }
+        }
+      }
+
+      if (newClauses.size === 0) {
+        steps.push('No new clauses derivable — NOT ENTAILED');
+        return { entailed: false, steps, resOps };
+      }
+      for (const [k, v] of newClauses) clauseSet.set(k, v);
+      if (clauseSet.size > 2000) break;
+    }
+    return { entailed: false, steps, resOps };
+  }
+
+  _resolvePair(c1, c2) {
+    const result = [];
+    for (const lit1Key of c1.literals) {
+      const lit1 = this._keyToLit(lit1Key);
+      for (const lit2Key of c2.literals) {
+        const lit2 = this._keyToLit(lit2Key);
+        if (lit1.isComplementOf(lit2)) {
+          const newLits = [];
+          for (const k of c1.literals) { if (k !== lit1Key) newLits.push(this._keyToLit(k)); }
+          for (const k of c2.literals) { if (k !== lit2Key) newLits.push(this._keyToLit(k)); }
+          const r = new Clause(newLits);
+          if (!r.isTautology()) result.push(r);
+        }
+      }
+    }
+    return result;
+  }
+
+  _keyToLit(key) {
+    if (key.startsWith('¬')) return new Literal(key.slice(1), false);
+    return new Literal(key, true);
+  }
+}
+
+// --- Model Checker ---
+class ModelChecker {
+  check(positiveFacts, negativeFacts, rules, querySymbol, queryPositive, maxSymbols = 12) {
+    const symbols = new Set([...positiveFacts, ...negativeFacts, querySymbol]);
+    for (const r of rules) { symbols.add(r.ant); symbols.add(r.con); }
+    const symList = [...symbols].slice(0, maxSymbols);
+    const n = symList.length;
+    let checked = 0, satisfying = 0, entailing = 0;
+
+    for (let mask = 0; mask < (1 << n); mask++) {
+      const model = {};
+      for (let i = 0; i < n; i++) model[symList[i]] = !!(mask & (1 << i));
+      checked++;
+      if (this._satisfiesKB(model, positiveFacts, negativeFacts, rules)) {
+        satisfying++;
+        const qv = queryPositive ? model[querySymbol] : !model[querySymbol];
+        if (qv) entailing++;
+      }
+    }
+    return { entailed: satisfying > 0 && entailing === satisfying, checked, satisfying, entailing };
+  }
+
+  _satisfiesKB(model, posFacts, negFacts, rules) {
+    for (const s of posFacts) { if (model[s] === false) return false; }
+    for (const s of negFacts) { if (model[s] === true) return false; }
+    for (const r of rules) {
+      const antTrue = r.antPos ? model[r.ant] : !model[r.ant];
+      const conTrue = r.conPos ? model[r.con] : !model[r.con];
+      if (antTrue && !conTrue) return false;
+    }
+    return true;
+  }
+}
+
+// --- Knowledge Base ---
+class KnowledgeBase {
+  constructor() {
+    this.facts = new Map(); // symbol -> {positive, literal}
+    this.rules = [];
+    this.log = [];
+    this.inferenceCount = 0;
+    this.resolutionOps = 0;
+    this._engine = new ResolutionEngine();
+    this._modelChecker = new ModelChecker();
+    this.onUpdate = null;
+  }
+
+  tell(symbol, positive = true) {
+    const litKey = (positive ? '' : '¬') + symbol;
+    this.facts.set(litKey, { symbol, positive });
+    // Remove complement for consistency
+    const compKey = (!positive ? '' : '¬') + symbol;
+    this.facts.delete(compKey);
+    this._log('TELL', litKey);
+    if (this.onUpdate) this.onUpdate('tell', litKey);
+  }
+
+  ask(symbol, positive = true, useModelCheck = true) {
+    const queryLit = new Literal(symbol, positive);
+    const queryStr = queryLit.toString();
+    this._log('ASK', `KB ⊨ ${queryStr} ?`);
+
+    // Direct fact check
+    if (this.facts.has(queryStr)) {
+      this._log('RESULT', `ENTAILED (direct fact)`);
+      return { entailed: true, method: 'direct', resOps: 0 };
+    }
+    if (this.facts.has(queryLit.negate().toString())) {
+      this._log('RESULT', `NOT ENTAILED (negation is fact)`);
+      return { entailed: false, method: 'direct', resOps: 0 };
+    }
+
+    // Resolution
+    const kbClauses = this._buildClauses();
+    const res = this._engine.resolve(kbClauses, queryLit);
+    this.resolutionOps += res.resOps;
+
+    // Optional model checking (verification)
+    let mc = null;
+    if (useModelCheck) {
+      const pos = [...this.facts.values()].filter(f => f.positive).map(f => f.symbol);
+      const neg = [...this.facts.values()].filter(f => !f.positive).map(f => f.symbol);
+      const simpleRules = this.rules.filter(r => r.antecedents.length === 1).map(r => ({
+        ant: r.antecedents[0].symbol, antPos: r.antecedents[0].positive,
+        con: r.consequent, conPos: r.consequentPositive
+      }));
+      mc = this._modelChecker.check(pos, neg, simpleRules, symbol, positive);
+    }
+
+    const label = res.entailed ? 'ENTAILED' : 'NOT ENTAILED';
+    this._log('RESULT', `${label} (${res.resOps} res. ops${mc ? `, ${mc.checked} models checked` : ''})`);
+    if (this.onUpdate) this.onUpdate('result', label);
+    return { entailed: res.entailed, method: 'resolution', resOps: res.resOps, mc };
+  }
+
+  infer() {
+    const derived = [];
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const rule of this.rules) {
+        const allSat = rule.antecedents.every(a => {
+          const k = (a.positive ? '' : '¬') + a.symbol;
+          return this.facts.has(k);
+        });
+        if (allSat) {
+          const conKey = (rule.consequentPositive ? '' : '¬') + rule.consequent;
+          if (!this.facts.has(conKey)) {
+            this.facts.set(conKey, { symbol: rule.consequent, positive: rule.consequentPositive });
+            derived.push(conKey);
+            changed = true;
+            this._log('INFER', `${conKey} [Modus Ponens: ${rule.toString()}]`);
+          }
+        }
+      }
+    }
+    this.inferenceCount += derived.length;
+    return derived;
+  }
+
+  addRule(antecedents, consequent, consequentPositive, name = '') {
+    this.rules.push({
+      antecedents, consequent, consequentPositive, name,
+      toString() {
+        const ants = antecedents.map(a => (a.positive?'':'¬') + a.symbol).join(' ∧ ');
+        const con = (consequentPositive?'':'¬') + consequent;
+        return `${ants} → ${con}`;
+      }
+    });
+    this._log('RULE', this.rules[this.rules.length-1].toString());
+  }
+
+  _buildClauses() {
+    const clauses = [];
+    for (const [k, f] of this.facts) {
+      clauses.push(new Clause([new Literal(f.symbol, f.positive)]));
+    }
+    for (const rule of this.rules) {
+      // (A1 ∧ A2 ∧ ... → C) becomes (¬A1 ∨ ¬A2 ∨ ... ∨ C)
+      const lits = rule.antecedents.map(a => new Literal(a.symbol, !a.positive));
+      lits.push(new Literal(rule.consequent, rule.consequentPositive));
+      const c = new Clause(lits);
+      if (!c.isTautology()) clauses.push(c);
+    }
+    return clauses;
+  }
+
+  get factCount() { return this.facts.size; }
+  get clauseCount() { return this._buildClauses().length; }
+  _log(op, msg) { this.log.push({ op, msg, time: Date.now() }); }
+
+  reset() {
+    this.facts.clear();
+    this.rules = [];
+    this.log = [];
+    this.inferenceCount = 0;
+    this.resolutionOps = 0;
+  }
+}
+
+// ============================================================
+//  MARS ENVIRONMENT
+// ============================================================
+
+const MAP_DATA = [
+  // col: 0    1    2    3    4    5    6
+  ['S', '.', '.', '.', 'H', '.', '.'],  // row 0
+  ['.', '?', '.', 'H', '.', '.', '.'],  // row 1
+  ['.', '.', 'R', '.', '.', '?', '.'],  // row 2
+  ['H', '.', '.', '.', 'R', '.', '.'],  // row 3
+  ['.', '.', '?', '.', '.', '.', '.'],  // row 4
+  ['.', 'H', '.', '?', '.', '.', '.'], // row 5
+  ['.', '.', '.', '.', '.', '.', 'G'],  // row 6
+];
+
+const CELL_TYPES = {
+  'S': 'START', '.': 'SAFE', 'H': 'HAZARD',
+  'R': 'RADIATION', '?': 'UNKNOWN', 'G': 'GOAL'
+};
+
+class MarsEnvironment {
+  constructor() {
+    this.width = 7; this.height = 7;
+    this.startPos = [0, 0];
+    this.goalPos = [6, 6];
+    this.grid = MAP_DATA.map(row => row.map(c => CELL_TYPES[c]));
+  }
+  getCell(x, y) { return this.grid[y][x]; }
+  isInBounds(x, y) { return x >= 0 && y >= 0 && x < this.width && y < this.height; }
+  getAdjacent(x, y) {
+    return [[x,y-1],[x,y+1],[x-1,y],[x+1,y]].filter(([nx,ny]) => this.isInBounds(nx,ny));
+  }
+  isTraversable(x, y) { return !['HAZARD','RADIATION'].includes(this.getCell(x,y)); }
+}
+
+// ============================================================
+//  ROVER AGENT
+// ============================================================
+
+const DIRECTIONS = { UP:[0,-1], DOWN:[0,1], LEFT:[-1,0], RIGHT:[1,0] };
+const DIR_LABELS = { '0,-1':'UP', '0,1':'DOWN', '-1,0':'LEFT', '1,0':'RIGHT' };
+
+class RoverAgent {
+  constructor(env, kb) {
+    this.env = env;
+    this.kb = kb;
+    this.position = [...env.startPos];
+    this.visited = new Set();
+    this.path = [];
+    this.stepCount = 0;
+    this.isDone = false;
+    this.missionSuccess = false;
+    this.metrics = { moves:0, pathCost:0, cells:0, inferences:0, resOps:0, rejected:0, unknownSensed:0 };
+    this._init();
+  }
+
+  _init() {
+    const [x,y] = this.position;
+    this.kb.tell(`At_${x}_${y}`);
+    this.kb.tell(`Safe_${x}_${y}`);
+    this.kb.tell(`Hazard_${x}_${y}`, false);
+    this.kb.tell(`Radiation_${x}_${y}`, false);
+    this.kb.tell(`Unknown_${x}_${y}`, false);
+    this._addSafeRule(x,y);
+    const [gx,gy] = this.env.goalPos;
+    this.kb.tell(`Goal_${gx}_${gy}`);
+    this.kb.addRule([{symbol:`At_${gx}_${gy}`,positive:true}], 'MissionComplete', true, 'Rule5-Goal');
+    this.visited.add(`${x},${y}`);
+    this.metrics.cells = 1;
+  }
+
+  _addSafeRule(x,y) {
+    this.kb.addRule([
+      {symbol:`Safe_${x}_${y}`,positive:true},
+      {symbol:`Hazard_${x}_${y}`,positive:false},
+      {symbol:`Radiation_${x}_${y}`,positive:false}
+    ], `CanMove_${x}_${y}`, true, `Rule3-${x}-${y}`);
+  }
+
+  _addHazardRule(x,y) {
+    this.kb.addRule([{symbol:`Hazard_${x}_${y}`,positive:true}], `MoveForward_${x}_${y}`, false, `Rule1-${x}-${y}`);
+    this.kb.addRule([{symbol:`Hazard_${x}_${y}`,positive:true}], `CanMove_${x}_${y}`, false, `Rule1b-${x}-${y}`);
+  }
+
+  _addRadiationRule(x,y) {
+    this.kb.addRule([{symbol:`Radiation_${x}_${y}`,positive:true}], `Enter_${x}_${y}`, false, `Rule2-${x}-${y}`);
+    this.kb.addRule([{symbol:`Radiation_${x}_${y}`,positive:true}], `CanMove_${x}_${y}`, false, `Rule2b-${x}-${y}`);
+  }
+
+  step() {
+    if (this.isDone) return null;
+    this.stepCount++;
+    const [x,y] = this.position;
+    const record = { step:this.stepCount, pos:[x,y], perceptions:[], tells:[], inferences:[], candidates:[], chosen:null, successor:null };
+
+    // 1. PERCEIVE
+    const adj = this.env.getAdjacent(x,y);
+    const toSense = [[x,y],...adj];
+    for (const [cx,cy] of toSense) {
+      if (cx===x && cy===y) continue;
+      const ct = this.env.getCell(cx,cy);
+      record.perceptions.push(`${ct} at (${cx},${cy})`);
+      this._senseCell(cx,cy,ct,record);
+    }
+
+    // 2. Forward chaining (INFER)
+    const derived = this.kb.infer();
+    record.inferences = derived;
+    this.metrics.inferences = this.kb.inferenceCount;
+
+    // 3. Evaluate candidates
+    let rejected = 0;
+    const safe = [];
+    for (const [dir,[dx,dy]] of Object.entries(DIRECTIONS)) {
+      const nx = x+dx, ny = y+dy;
+      if (!this.env.isInBounds(nx,ny)) continue;
+      const cand = { dir, target:[nx,ny], accepted:false, reason:'', manhattan: Math.abs(nx-this.env.goalPos[0])+Math.abs(ny-this.env.goalPos[1]) };
+      // ASK KB
+      const res = this.kb.ask(`CanMove_${nx}_${ny}`, true, true);
+      this.metrics.resOps = this.kb.resolutionOps;
+
+      if (res.entailed) {
+        cand.accepted = true;
+        cand.reason = `KB ⊨ CanMove_${nx}_${ny} — ACCEPTED`;
+        safe.push(cand);
+      } else {
+        // Determine reason
+        const hz = this.kb.ask(`Hazard_${nx}_${ny}`, true, false);
+        const rd = this.kb.ask(`Radiation_${nx}_${ny}`, true, false);
+        if (hz.entailed) cand.reason = `HAZARD at (${nx},${ny}) → ¬MoveForward (Modus Ponens)`;
+        else if (rd.entailed) cand.reason = `RADIATION at (${nx},${ny}) → ¬Enter (Modus Ponens)`;
+        else cand.reason = `KB ⊭ CanMove_${nx}_${ny} (unknown terrain)`;
+        rejected++;
+      }
+      record.candidates.push(cand);
+    }
+    this.metrics.rejected += rejected;
+
+    // 4. Decide
+    let chosen = null;
+    if (safe.length > 0) {
+      const unvisited = safe.filter(c => !this.visited.has(`${c.target[0]},${c.target[1]}`));
+      const pool = unvisited.length > 0 ? unvisited : safe;
+      pool.sort((a,b) => a.manhattan - b.manhattan);
+      chosen = pool[0];
+    } else if (this.path.length > 0) {
+      const bp = this.path[this.path.length-1];
+      chosen = { dir:'BACK', target:bp, accepted:true, reason:'Backtrack — no safe forward candidates' };
+    } else {
+      this.isDone = true;
+      return record;
+    }
+
+    // 5. ACT
+    this.path.push([...this.position]);
+    const [nx,ny] = chosen.target;
+    this.position = [nx,ny];
+    record.chosen = chosen;
+    record.successor = [nx,ny];
+
+    this.kb.tell(`At_${nx}_${ny}`);
+    this.kb.tell(`Visited_${nx}_${ny}`);
+    this.kb.tell(`Visited_${x}_${y}`);
+    this.metrics.moves++;
+    this.metrics.pathCost++;
+    if (!this.visited.has(`${nx},${ny}`)) { this.visited.add(`${nx},${ny}`); this.metrics.cells++; }
+
+    // 6. Check goal
+    if (nx === this.env.goalPos[0] && ny === this.env.goalPos[1]) {
+      this.kb.tell('MissionComplete');
+      this.kb.infer();
+      this.isDone = true;
+      this.missionSuccess = true;
+    }
+    this.metrics.inferences = this.kb.inferenceCount;
+    this.metrics.resOps = this.kb.resolutionOps;
+    return record;
+  }
+
+  _senseCell(cx, cy, cellType, record) {
+    const key = `${cx},${cy}`;
+    if (this._sensed && this._sensed.has(key)) return;
+    if (!this._sensed) this._sensed = new Set();
+    this._sensed.add(key);
+
+    if (cellType === 'HAZARD') {
+      this.kb.tell(`PerceiveHazard_${cx}_${cy}`);
+      this.kb.tell(`Hazard_${cx}_${cy}`);
+      this.kb.tell(`Safe_${cx}_${cy}`, false);
+      this.kb.tell(`CanMove_${cx}_${cy}`, false);
+      this._addHazardRule(cx,cy);
+    } else if (cellType === 'RADIATION') {
+      this.kb.tell(`PerceiveRadiation_${cx}_${cy}`);
+      this.kb.tell(`Radiation_${cx}_${cy}`);
+      this.kb.tell(`Safe_${cx}_${cy}`, false);
+      this.kb.tell(`CanMove_${cx}_${cy}`, false);
+      this._addRadiationRule(cx,cy);
+    } else if (cellType === 'SAFE' || cellType === 'START') {
+      this.kb.tell(`Safe_${cx}_${cy}`);
+      this.kb.tell(`Hazard_${cx}_${cy}`, false);
+      this.kb.tell(`Radiation_${cx}_${cy}`, false);
+      this.kb.tell(`Unknown_${cx}_${cy}`, false);
+      this._addSafeRule(cx,cy);
+    } else if (cellType === 'UNKNOWN') {
+      this.kb.tell(`Unknown_${cx}_${cy}`);
+      this.metrics.unknownSensed++;
+    } else if (cellType === 'GOAL') {
+      this.kb.tell(`Goal_${cx}_${cy}`);
+      this.kb.tell(`Safe_${cx}_${cy}`);
+      this.kb.tell(`Hazard_${cx}_${cy}`, false);
+      this.kb.tell(`Radiation_${cx}_${cy}`, false);
+      this.kb.tell(`Unknown_${cx}_${cy}`, false);
+      this._addSafeRule(cx,cy);
+    }
+    record.tells.push(`${cellType} at (${cx},${cy})`);
+  }
+
+  reset() {
+    this.position = [...this.env.startPos];
+    this.visited = new Set();
+    this.path = [];
+    this.stepCount = 0;
+    this.isDone = false;
+    this.missionSuccess = false;
+    this._sensed = new Set();
+    this.metrics = { moves:0, pathCost:0, cells:0, inferences:0, resOps:0, rejected:0, unknownSensed:0 };
+    this.kb.reset();
+    this._init();
+  }
+}
+
+// ============================================================
+//  SIMULATION
+// ============================================================
+
+let env = new MarsEnvironment();
+let kb = new KnowledgeBase();
+let rover = new RoverAgent(env, kb);
+let simState = 'idle'; // idle | running | paused | done
+let autoTimer = null;
+let stepDelay = 800;
+let startTime = null;
+
+// ============================================================
+//  UI RENDERING
+// ============================================================
+
+function renderGrid() {
+  const grid = document.getElementById('marsGrid');
+  grid.style.gridTemplateColumns = `repeat(${env.width}, 1fr)`;
+  grid.innerHTML = '';
+  for (let y = 0; y < env.height; y++) {
+    for (let x = 0; x < env.width; x++) {
+      grid.appendChild(makeCell(x,y));
+    }
+  }
+}
+
+function makeCell(x,y) {
+  const div = document.createElement('div');
+  div.className = 'cell';
+  div.id = `cell_${x}_${y}`;
+
+  const isRover = rover.position[0]===x && rover.position[1]===y;
+  const isGoal = env.goalPos[0]===x && env.goalPos[1]===y;
+  const isStart = env.startPos[0]===x && env.startPos[1]===y && !isRover;
+  const visited = rover.visited.has(`${x},${y}`) && !isRover;
+  const ct = env.getCell(x,y);
+
+  const coord = document.createElement('div');
+  coord.className = 'cell-coord';
+  coord.textContent = `(${x},${y})`;
+  div.appendChild(coord);
+
+  const icon = document.createElement('div');
+  icon.className = 'cell-icon';
+  const lbl = document.createElement('div');
+  lbl.className = 'cell-label';
+
+  if (isRover) {
+    div.classList.add('cell-rover');
+    icon.textContent = '🤖';
+    lbl.textContent = 'ROVER';
+  } else if (isGoal) {
+    div.classList.add('cell-goal');
+    icon.textContent = '⭐';
+    lbl.textContent = 'GOAL';
+  } else if (ct === 'HAZARD') {
+    div.classList.add('cell-hazard');
+    icon.textContent = '⚠️';
+    lbl.textContent = 'HAZARD';
+  } else if (ct === 'RADIATION') {
+    div.classList.add('cell-radiation');
+    icon.textContent = '☢️';
+    lbl.textContent = 'RADIATION';
+  } else if (ct === 'UNKNOWN') {
+    div.classList.add('cell-unknown');
+    icon.textContent = '❓';
+    lbl.textContent = 'UNKNOWN';
+  } else if (isStart) {
+    div.classList.add('cell-start');
+    icon.textContent = '🚀';
+    lbl.textContent = 'START';
+  } else if (visited) {
+    div.classList.add('cell-visited');
+    icon.textContent = '✓';
+    lbl.textContent = 'VISITED';
+  } else {
+    div.classList.add('cell-safe');
+    icon.textContent = '·';
+    lbl.textContent = 'SAFE';
+  }
+
+  div.appendChild(icon);
+  div.appendChild(lbl);
+  return div;
+}
+
+function updateInfoPanel(record) {
+  const m = rover.metrics;
+  document.getElementById('iPos').textContent = `(${rover.position[0]},${rover.position[1]})`;
+  document.getElementById('iKbFacts').textContent = kb.factCount;
+  document.getElementById('iKbClauses').textContent = kb.clauseCount;
+  document.getElementById('iMoves').textContent = m.moves;
+  document.getElementById('iCost').textContent = m.pathCost;
+  document.getElementById('iInf').textContent = m.inferences;
+  document.getElementById('iRes').textContent = m.resOps;
+  document.getElementById('iRej').textContent = m.rejected;
+  document.getElementById('iCells').textContent = m.cells;
+  if (record && record.chosen) {
+    document.getElementById('iDecision').textContent = `MOVE ${record.chosen.dir} → (${record.chosen.target})`;
+  }
+}
+
+function addKbLine(cls, text) {
+  const log = document.getElementById('kbLog');
+  const div = document.createElement('div');
+  div.className = cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function updateKbPanel(record) {
+  if (!record) return;
+  addKbLine('kb-line-step', `─── STEP ${String(record.step).padStart(2,'0')} @ (${record.pos}) ───`);
+  for (const t of record.tells.slice(0,5)) addKbLine('kb-line-tell', `  TELL: ${t}`);
+  for (const inf of record.inferences.slice(0,4)) addKbLine('kb-line-infer', `  INFER: ${inf} [Modus Ponens]`);
+  for (const c of record.candidates) {
+    const pre = c.accepted ? '  ✓ ASK' : '  ✗ ASK';
+    const cls = c.accepted ? 'kb-line-accept' : 'kb-line-reject';
+    addKbLine(cls, `${pre} CanMove_${c.target[0]}_${c.target[1]}: ${c.reason.slice(0,40)}`);
+  }
+  if (record.chosen) {
+    addKbLine('kb-line-result', `  → DECISION: MOVE ${record.chosen.dir} → (${record.chosen.target})`);
+    addKbLine('kb-line-result', `  SUCCESSOR STATE: At_${record.successor[0]}_${record.successor[1]}`);
+  }
+}
+
+function updateExplainPanel(record) {
+  if (!record) return;
+  const log = document.getElementById('explainLog');
+  log.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'explain-head';
+  head.textContent = `WHY DID THE ROVER MOVE?  (Step ${record.step})`;
+  log.appendChild(head);
+
+  const pos = document.createElement('div');
+  pos.style.color = 'var(--dim)';
+  pos.textContent = `  Current position: (${record.pos[0]},${record.pos[1]})`;
+  log.appendChild(pos);
+
+  for (const c of record.candidates) {
+    const line = document.createElement('div');
+    line.className = c.accepted ? 'explain-accept' : 'explain-reject';
+    const sym = c.accepted ? '✓' : '✗';
+    line.textContent = `  ${sym} ${c.dir} → (${c.target}): ${c.reason}`;
+    log.appendChild(line);
+  }
+
+  if (record.chosen) {
+    const ch = document.createElement('div');
+    ch.className = 'explain-chosen';
+    ch.textContent = `  → CHOSEN: ${record.chosen.dir} → (${record.chosen.target})`;
+    log.appendChild(ch);
+    const ss = document.createElement('div');
+    ss.className = 'explain-chosen';
+    ss.textContent = `  Successor State: At_${record.successor[0]}_${record.successor[1]}  |  Path Cost: ${rover.metrics.pathCost}`;
+    log.appendChild(ss);
+  }
+  log.scrollTop = log.scrollHeight;
+}
+
+function showMissionComplete() {
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(3);
+  const m = rover.metrics;
+  const box = document.getElementById('metricsBox');
+  box.innerHTML = `
+    <div class="metric-row"><span class="metric-key">Mission Status</span><span class="metric-val">✓ SUCCESS</span></div>
+    <div class="metric-row"><span class="metric-key">Execution Time</span><span class="metric-val">${elapsed} sec</span></div>
+    <div class="metric-row"><span class="metric-key">Total Moves</span><span class="metric-val">${m.moves}</span></div>
+    <div class="metric-row"><span class="metric-key">Path Cost</span><span class="metric-val">${m.pathCost}</span></div>
+    <div class="metric-row"><span class="metric-key">Cells Visited</span><span class="metric-val">${m.cells}</span></div>
+    <div class="metric-row"><span class="metric-key">Inference Operations</span><span class="metric-val">${m.inferences}</span></div>
+    <div class="metric-row"><span class="metric-key">Resolution Operations</span><span class="metric-val">${m.resOps}</span></div>
+    <div class="metric-row"><span class="metric-key">Unsafe Rejected</span><span class="metric-val">${m.rejected}</span></div>
+    <div class="metric-row"><span class="metric-key">KB Facts (final)</span><span class="metric-val">${kb.factCount}</span></div>
+    <div class="metric-row"><span class="metric-key">KB Clauses (final)</span><span class="metric-val">${kb.clauseCount}</span></div>`;
+  document.getElementById('missionOverlay').classList.add('show');
+}
+
+function setStatus(text, state='idle') {
+  document.getElementById('statusText').textContent = text;
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot' + (state==='running'?' active':state==='done'?' done':'');
+  document.getElementById('iStatus').textContent =
+    state==='running'?'RUNNING':state==='done'?'✓ COMPLETE':state==='paused'?'PAUSED':'IDLE';
+}
+
+// ============================================================
+//  COMMANDS
+// ============================================================
+
+function executeStep() {
+  const record = rover.step();
+  renderGrid();
+  updateInfoPanel(record);
+  updateKbPanel(record);
+  updateExplainPanel(record);
+  if (record && record.chosen) {
+    setStatus(`Step ${record.step}: MOVE ${record.chosen.dir} → (${record.chosen.target}) | KB: ${kb.factCount} facts | Moves: ${rover.metrics.moves}`, 'running');
+  }
+  if (rover.isDone) {
+    clearInterval(autoTimer);
+    autoTimer = null;
+    simState = 'done';
+    setStatus(`✓ MISSION COMPLETE — ${rover.metrics.moves} moves, ${rover.metrics.pathCost} path cost`, 'done');
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnPause').disabled = true;
+    if (rover.missionSuccess) setTimeout(showMissionComplete, 600);
+    addKbLine('kb-line-result', `★ MISSION COMPLETE! KB ⊨ MissionComplete = TRUE`);
+    addKbLine('kb-line-result', `Rule 5: At_6_6 → MissionComplete (Modus Ponens)`);
+  }
+}
+
+function cmdStart() {
+  if (simState === 'idle') {
+    startTime = Date.now();
+    simState = 'running';
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnPause').disabled = false;
+    setStatus('Mission started — Rover navigating Mars...', 'running');
+    addKbLine('kb-line-step', '═══ MISSION STARTED ═══');
+    autoTimer = setInterval(executeStep, stepDelay);
+  } else if (simState === 'paused') {
+    simState = 'running';
+    document.getElementById('btnPause').textContent = '⏸ PAUSE';
+    setStatus('Resumed — Rover navigating...', 'running');
+    autoTimer = setInterval(executeStep, stepDelay);
+  }
+}
+
+function cmdStep() {
+  if (simState === 'idle') {
+    startTime = Date.now();
+    simState = 'paused';
+    setStatus('Step mode — Click STEP to advance', 'paused');
+    addKbLine('kb-line-step', '═══ STEP MODE ═══');
+  }
+  if (!rover.isDone) executeStep();
+}
+
+function cmdPause() {
+  if (simState === 'running') {
+    clearInterval(autoTimer); autoTimer = null;
+    simState = 'paused';
+    document.getElementById('btnPause').textContent = '▶ RESUME';
+    setStatus('Paused — Click STEP or START to continue', 'paused');
+  } else if (simState === 'paused') {
+    cmdStart();
+  }
+}
+
+function cmdReset() {
+  clearInterval(autoTimer); autoTimer = null;
+  simState = 'idle';
+  rover.reset();
+  renderGrid();
+  updateInfoPanel(null);
+  document.getElementById('kbLog').innerHTML = `
+    <div class="kb-line-dim">⬡ Knowledge Base reset.</div>
+    <div class="kb-line-tell">  TELL: At_0_0  |  TELL: Safe_0_0</div>
+    <div class="kb-line-rule">  Rules loaded: 8 core propositional rules</div>
+    <div class="kb-line-dim">  Waiting for mission start...</div>`;
+  document.getElementById('explainLog').innerHTML = `<div class="explain-head">Decision explanation will appear here after each step.</div>`;
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStart').textContent = '▶ START MISSION';
+  document.getElementById('btnPause').disabled = true;
+  document.getElementById('btnPause').textContent = '⏸ PAUSE';
+  setStatus('Reset — Click START MISSION to begin', 'idle');
+  updateInfoPanel({});
+  document.getElementById('iDecision').textContent = '—';
+  document.getElementById('iStatus').textContent = 'IDLE';
+}
+
+function updateSpeed(val) {
+  stepDelay = parseInt(val);
+  document.getElementById('speedLabel').textContent = `${val}ms`;
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = setInterval(executeStep, stepDelay); }
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+
+renderGrid();
+updateInfoPanel(null);
+</script>
+</body>
+</html>

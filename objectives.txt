@@ -1,0 +1,1605 @@
+# MASTER DEVELOPMENT PROMPT
+
+## Autonomous Mars Rover — Propositional Logic Knowledge-Based Agent
+
+You are an expert Python AI engineer and educational-project developer.
+
+Build my complete **AI Specialization Project: “Autonomous Mars Rover — Propositional Logic Knowledge-Based Agent”**.
+
+This is an academic project based specifically on **Unit 3: Logical Agents / Propositional Logic**. The implementation must demonstrate the concepts I have studied in class rather than merely creating a visual pathfinding simulation.
+
+## 1. PROJECT SCENARIO
+
+Create an autonomous Mars rover operating on a 2D grid representing a section of the Martian surface.
+
+The grid contains:
+
+* Safe terrain
+* Unknown terrain
+* Hazard zones
+* Radiation zones
+* The rover's starting position
+* A target/goal position
+
+The rover must autonomously navigate from its start position to the goal while continuously:
+
+1. Perceiving environmental information.
+2. Updating its Knowledge Base (KB).
+3. Using Propositional Logic to infer what is safe or unsafe.
+4. Deciding whether movement is allowed.
+5. Moving only when logically justified.
+6. Updating the KB after every action/perception.
+7. Printing a detailed live console log showing the reasoning process.
+
+The project must clearly demonstrate that the rover is a **Knowledge-Based Agent**, not simply an A* pathfinder.
+
+---
+
+# 2. MOST IMPORTANT REQUIREMENT
+
+DO NOT make this merely a grid game with hard-coded movement.
+
+The rover's decisions MUST be generated from its **Propositional Logic Knowledge Base**.
+
+The central loop should conceptually be:
+
+PERCEIVE
+→ TELL(KB)
+→ ASK(KB)
+→ INFER
+→ DECIDE
+→ ACT
+→ SUCCESSOR STATE
+→ UPDATE KB
+→ REPEAT
+
+The implementation must visibly demonstrate this cycle.
+
+---
+
+# 3. TECHNOLOGY
+
+Use:
+
+* Python 3
+* Tkinter for the visual grid interface
+* Standard Python libraries wherever possible
+* No unnecessary frameworks
+* No database
+* No web backend
+* No cloud services
+* No deployment configuration
+
+The project must run locally with a simple command such as:
+
+python main.py
+
+Keep the architecture simple enough that it can be fully tested and demonstrated within a few hours.
+
+---
+
+# 4. VISUAL INTERFACE
+
+Create a polished but lightweight Tkinter interface.
+
+The main window should contain:
+
+### A. Mars Grid
+
+Display a clear rectangular grid.
+
+Use visually distinct cells for:
+
+* 🟢 SAFE
+* 🟡 UNKNOWN
+* 🔴 HAZARD
+* ☢ RADIATION
+* 🔵 ROVER
+* ⭐ GOAL
+* Previously visited cells
+
+Do NOT depend only on emojis if they cause rendering problems. Use clear colors, symbols, or labels as a fallback.
+
+Each cell should display its coordinate, for example:
+
+(1,1)
+
+(1,2)
+
+(2,1)
+
+etc.
+
+### B. Rover
+
+Display the rover clearly.
+
+When the rover moves:
+
+* Animate the movement if practical.
+* Highlight the current position.
+* Mark visited positions.
+* Show the rover's current coordinate.
+* Show the current action.
+
+### C. Information Panel
+
+Display:
+
+* Current Position
+* Goal Position
+* Current Perception
+* Current Decision
+* Current Inference
+* Number of KB facts
+* Number of clauses
+* Moves made
+* Path cost
+* Inference count
+* Simulation status
+
+### D. Knowledge Base Panel
+
+Show recently added logical facts/rules.
+
+For example:
+
+TELL:
+Safe_2_3
+
+TELL:
+¬Hazard_2_3
+
+TELL:
+¬Radiation_2_3
+
+ASK:
+Safe_2_4?
+
+RESULT:
+FALSE / NOT ENTAILED
+
+ASK:
+¬Hazard_2_4?
+
+RESULT:
+ENTAILED
+
+Keep this panel readable.
+
+---
+
+# 5. LIVE CONSOLE LOG — MANDATORY
+
+The application MUST print detailed reasoning to the terminal/console in real time.
+
+The console output is an important part of the demonstration.
+
+Use structured logs such as:
+
+==================================================
+ROVER STEP 07
+=============
+
+CURRENT POSITION:
+(2,3)
+
+PERCEPTION:
+Hazard signal detected near (2,4)
+
+KB UPDATE:
+TELL(Hazard_2_4)
+
+RULE ACTIVATED:
+Hazard(x,y) → ¬MoveForward(x,y)
+
+INFERENCE:
+¬MoveForward_2_4
+
+ASK:
+KB ⊨ MoveForward_2_4 ?
+
+RESULT:
+FALSE
+
+DECISION:
+DO NOT MOVE FORWARD
+
+ALTERNATIVE ACTION:
+Evaluate LEFT / RIGHT / BACK
+
+SUCCESSOR STATE:
+(2,3) → (2,2)
+
+PATH COST:
+5
+
+==================================================
+
+The exact wording can differ, but the reasoning chain must be obvious.
+
+The examiner should be able to look at the console and understand:
+
+PERCEPTION → KB UPDATE → LOGICAL RULE → INFERENCE → ACTION
+
+---
+
+# 6. PROPOSITIONAL LOGIC IMPLEMENTATION
+
+This is the core of the project.
+
+Implement a real propositional Knowledge Base.
+
+Do NOT fake inference by simply checking Python if/else conditions.
+
+Create a logical representation containing:
+
+## Atomic propositions
+
+Examples:
+
+Safe_1_1
+
+Hazard_1_2
+
+Radiation_2_3
+
+Visited_1_1
+
+At_1_1
+
+Goal_4_4
+
+MoveForward_1_2
+
+CanMove_1_2
+
+Unknown_2_2
+
+Use a consistent naming system.
+
+---
+
+# 7. COMPLEX PROPOSITIONS
+
+Represent rules using logical connectives:
+
+* AND: ∧
+* OR: ∨
+* NOT: ¬
+* IMPLIES: →
+* BICONDITIONAL: ↔ where useful
+
+Examples:
+
+Hazard_2_3 → ¬MoveForward_2_3
+
+Radiation_2_3 → ¬Enter_2_3
+
+Safe_2_3 ∧ ¬Hazard_2_3 → CanMove_2_3
+
+At_2_3 ∧ CanMove_2_4 → MoveTo_2_4
+
+Goal_4_4 → MissionComplete
+
+---
+
+# 8. REQUIRED RULES
+
+Implement a meaningful set of propositional rules.
+
+At minimum include:
+
+### Rule 1 — Hazard
+
+Hazard_x_y → ¬MoveForward_x_y
+
+Meaning:
+
+If a hazard is detected at a coordinate, the rover must not move into it.
+
+### Rule 2 — Radiation
+
+Radiation_x_y → ¬Enter_x_y
+
+### Rule 3 — Safe Terrain
+
+Safe_x_y ∧ ¬Hazard_x_y ∧ ¬Radiation_x_y → CanMove_x_y
+
+### Rule 4 — Current Position
+
+At_x_y ∧ CanMove_x2_y2 → MoveTo_x2_y2
+
+### Rule 5 — Goal
+
+At_Goal → MissionComplete
+
+### Rule 6 — Unknown Terrain
+
+Unknown_x_y → Investigate_x_y
+
+The rover should treat unknown cells cautiously rather than automatically assuming they are safe.
+
+### Rule 7 — Hazard Signal
+
+PerceiveHazard_x_y → Hazard_x_y
+
+This directly demonstrates the project requirement:
+
+“Perceive Hazard Signal → ¬Move Forward”
+
+### Rule 8 — Radiation Signal
+
+PerceiveRadiation_x_y → Radiation_x_y
+
+---
+
+# 9. KNOWLEDGE BASE API
+
+Implement a clear KnowledgeBase class.
+
+It should conceptually support:
+
+TELL(statement)
+
+ASK(statement)
+
+RETRACT(statement)
+
+INFER(statement)
+
+GET_FACTS()
+
+GET_RULES()
+
+The terminology MUST use the same concepts from my class notes.
+
+The console should explicitly show:
+
+TELL
+
+ASK
+
+INFERENCE
+
+KB UPDATE
+
+---
+
+# 10. INFERENCE ENGINE
+
+Implement actual propositional inference.
+
+The preferred implementation is:
+
+## Resolution-based inference
+
+Use:
+
+1. Convert propositions into CNF.
+2. Represent clauses as sets of literals.
+3. Apply resolution.
+4. Determine whether the queried proposition is entailed.
+
+For:
+
+KB ⊨ α
+
+use the standard contradiction approach:
+
+KB ∧ ¬α
+
+Then determine whether contradiction/empty clause can be derived.
+
+The implementation should expose the resolution process so that the console can show it.
+
+Example:
+
+QUERY:
+KB ⊨ ¬MoveForward_2_4 ?
+
+NEGATED QUERY:
+MoveForward_2_4
+
+RESOLUTION STEP:
+...
+
+DERIVED:
+{}
+
+CONCLUSION:
+ENTAILED
+
+Do not simply return True/False without showing the logical reasoning.
+
+---
+
+# 11. MODEL CHECKING
+
+If practical, implement a small model-checking function as a second verification mechanism.
+
+For example:
+
+model_check(KB, query)
+
+It should evaluate possible truth assignments for a small set of propositions and determine whether:
+
+KB ⊨ query
+
+This is especially useful for demonstrating the “models” and “entailment” concepts from my notes.
+
+Do not allow model checking to become computationally huge.
+
+Limit it to the small local set of propositions relevant to the current decision.
+
+If both methods are implemented, display:
+
+RESOLUTION RESULT:
+ENTAILED
+
+MODEL CHECKING RESULT:
+ENTAILED
+
+CONSISTENT RESULT:
+YES
+
+This provides a strong academic demonstration.
+
+---
+
+# 12. CNF CONVERSION
+
+Implement a CNF conversion pipeline for the logical expressions used by the inference engine.
+
+The conversion should demonstrate the transformations I studied:
+
+### Implication elimination
+
+α → β
+
+becomes:
+
+¬α ∨ β
+
+### Biconditional elimination
+
+α ↔ β
+
+becomes:
+
+(α → β) ∧ (β → α)
+
+### De Morgan's Laws
+
+¬(α ∧ β)
+
+becomes:
+
+¬α ∨ ¬β
+
+and
+
+¬(α ∨ β)
+
+becomes:
+
+¬α ∧ ¬β
+
+### Double negation
+
+¬(¬α)
+
+becomes:
+
+α
+
+Use these transformations internally wherever required by the resolution engine.
+
+---
+
+# 13. CLAUSES
+
+Represent CNF as clauses.
+
+For example:
+
+¬Hazard_2_3 ∨ ¬MoveForward_2_3
+
+and:
+
+¬Safe_2_3 ∨ Hazard_2_3 ∨ Radiation_2_3 ∨ CanMove_2_3
+
+The code should have a clear Clause representation.
+
+Also document:
+
+* Literal
+* Clause
+* CNF
+* Horn clause
+* Definite clause
+* Goal clause
+
+The project does not need to use every clause type in the actual decision engine, but the README should explain their relationship to the implementation.
+
+---
+
+# 14. FORWARD PROPAGATION
+
+Include forward propagation where appropriate.
+
+Example:
+
+Initial fact:
+
+Hazard_2_4
+
+Rule:
+
+Hazard_2_4 → ¬MoveForward_2_4
+
+Inference:
+
+¬MoveForward_2_4
+
+The console should display this chain.
+
+This directly corresponds to what I studied:
+
+Axioms → Inference Rules → New Facts → Goal
+
+---
+
+# 15. BACKWARD REASONING
+
+Implement a lightweight backward reasoning/query explanation mechanism if practical.
+
+Example:
+
+GOAL:
+CanMove_2_4?
+
+Required conditions:
+
+Safe_2_4
+
+¬Hazard_2_4
+
+¬Radiation_2_4
+
+The system should inspect whether these are known/entailed.
+
+This demonstrates the distinction between:
+
+Forward:
+Facts → Goal
+
+Backward:
+Goal → Required conditions
+
+It does not need to replace resolution. It can be used as an explanation mechanism.
+
+---
+
+# 16. RULES OF INFERENCE
+
+Where logically applicable, demonstrate the concepts from my notes:
+
+### Modus Ponens
+
+P → Q
+P
+∴ Q
+
+Example:
+
+Hazard_2_4 → ¬MoveForward_2_4
+
+Hazard_2_4
+
+∴ ¬MoveForward_2_4
+
+### Modus Tollens
+
+P → Q
+¬Q
+∴ ¬P
+
+### Disjunctive Rule
+
+P ∨ Q
+¬P
+∴ Q
+
+### Conjunctive Rule
+
+P ∧ Q
+∴ P
+
+and
+
+P ∧ Q
+∴ Q
+
+The project should not artificially apply invalid rules.
+
+If a rule is only used as part of the resolution implementation, explain it in the README rather than pretending it is a separate engine.
+
+---
+
+# 17. ENTAILMENT
+
+Explicitly support the concept:
+
+KB ⊨ α
+
+Meaning:
+
+“If α is true in every model where the KB is true, then the KB entails α.”
+
+Use this terminology in:
+
+* Console logs
+* README
+* UI
+* Code comments
+
+Example:
+
+KB ⊨ ¬Enter_3_4
+
+Therefore:
+
+The rover cannot safely enter (3,4).
+
+---
+
+# 18. MODELS
+
+Represent the idea that a model is a possible interpretation/world state.
+
+For example:
+
+MODEL 1:
+Safe_2_2 = True
+Hazard_2_2 = False
+Radiation_2_2 = False
+
+MODEL 2:
+Safe_2_2 = False
+Hazard_2_2 = True
+Radiation_2_2 = False
+
+Use this concept in model checking.
+
+The UI can optionally show:
+
+Possible Models Checked: 8
+
+Models Satisfying KB: 3
+
+Models Entailing Query: 3
+
+Therefore:
+
+KB ⊨ Query
+
+---
+
+# 19. SOUNDNESS AND COMPLETENESS
+
+The project should clearly document these concepts.
+
+### Soundness
+
+If:
+
+KB ⊢ α
+
+then:
+
+KB ⊨ α
+
+Meaning the implemented inference system should not derive false conclusions from valid premises.
+
+### Completeness
+
+If:
+
+KB ⊨ α
+
+then:
+
+KB ⊢ α
+
+Explain that the implemented propositional resolution method is complete for propositional logic.
+
+Do not falsely claim that every custom heuristic or movement strategy is itself a complete logical theorem prover.
+
+---
+
+# 20. SATISFIABILITY AND VALIDITY
+
+Include short explanations in README/documentation.
+
+### Satisfiability
+
+A proposition is satisfiable if there is at least one model in which it is true.
+
+### Validity
+
+A proposition is valid if it is true in every possible model.
+
+Show these concepts in the educational explanation panel or README.
+
+They do not need to dominate the simulation.
+
+---
+
+# 21. FLUENTS AND SUCCESSOR STATES
+
+Use the terminology from my notes.
+
+A fluent represents a property whose value can change over time/actions.
+
+Examples:
+
+At_2_3
+
+Visited_2_3
+
+CanMove_2_4
+
+CurrentDirection_EAST
+
+The rover's movement should produce successor states.
+
+Example:
+
+Current State:
+At_2_3
+
+Action:
+MoveRight
+
+Successor State:
+At_2_4
+
+The console should show:
+
+CURRENT STATE:
+At_2_3
+
+ACTION:
+MoveRight
+
+SUCCESSOR STATE:
+At_2_4
+
+KB UPDATED.
+
+---
+
+# 22. AUTONOMOUS DECISION-MAKING
+
+The rover should not simply follow a predetermined path.
+
+At every step:
+
+1. Look at neighboring cells.
+2. Generate possible actions.
+3. Query the KB for each candidate.
+4. Reject logically unsafe actions.
+5. Prefer a safe action that moves closer to the goal.
+6. Update the KB.
+7. Move.
+8. Repeat.
+
+If the shortest-looking direction is dangerous, the rover must choose another safe direction.
+
+Example:
+
+Candidate:
+RIGHT → Hazard
+
+KB conclusion:
+¬CanMove_Right
+
+Candidate:
+UP → Safe
+
+KB conclusion:
+CanMove_Up
+
+Decision:
+MOVE UP
+
+This is the key demonstration of intelligence.
+
+---
+
+# 23. NO CHEATING WITH HIDDEN MAP KNOWLEDGE
+
+The rover's decision system should not have direct access to the entire environment when making decisions.
+
+The environment may internally know where hazards/radiation exist, but the rover should learn/perceive them through sensors.
+
+Separate:
+
+ENVIRONMENT STATE
+
+from:
+
+ROVER KNOWLEDGE BASE
+
+The rover only receives the perceptions allowed by its sensors.
+
+This distinction is extremely important because this is a Knowledge-Based Agent.
+
+---
+
+# 24. SENSOR MODEL
+
+Give the rover simple simulated sensors.
+
+For example:
+
+* Hazard sensor
+* Radiation sensor
+* Terrain sensor
+* Goal sensor
+* Adjacent-cell perception
+
+When the rover enters or examines an area:
+
+PERCEPTION EVENT
+
+→ convert perception into proposition
+
+→ TELL(KB)
+
+Example:
+
+Sensor:
+Radiation detected at (3,4)
+
+KB:
+
+TELL(Radiation_3_4)
+
+Rule:
+
+Radiation_3_4 → ¬Enter_3_4
+
+Inference:
+
+¬Enter_3_4
+
+Decision:
+
+Avoid (3,4)
+
+---
+
+# 25. UNKNOWN TERRAIN
+
+Unknown cells are important.
+
+Do NOT mark every unvisited cell as automatically safe.
+
+Use:
+
+Unknown_x_y
+
+The rover can investigate unknown cells.
+
+After perception:
+
+Unknown_x_y
+
+may become:
+
+Safe_x_y
+
+or:
+
+Hazard_x_y
+
+or:
+
+Radiation_x_y
+
+This makes the simulation dynamic.
+
+---
+
+# 26. DYNAMIC KB UPDATES
+
+The KB must visibly change during execution.
+
+Example:
+
+STEP 1
+
+TELL:
+At_1_1
+
+TELL:
+Safe_1_1
+
+STEP 2
+
+Perception:
+Hazard signal at 1,2
+
+TELL:
+Hazard_1_2
+
+INFER:
+¬MoveForward_1_2
+
+STEP 3
+
+Perception:
+Safe terrain at 2,1
+
+TELL:
+Safe_2_1
+
+INFER:
+CanMove_2_1
+
+DECISION:
+Move to 2,1
+
+The KB should accumulate relevant knowledge during the simulation.
+
+---
+
+# 27. ENVIRONMENT GENERATION
+
+Create a deterministic default environment so the demonstration always works.
+
+Do NOT rely completely on random generation.
+
+Have one carefully designed default Mars map containing:
+
+* Several safe cells
+* At least one hazard that blocks the obvious path
+* At least one radiation zone
+* Unknown cells
+* A reachable goal
+* At least one situation requiring the rover to reconsider its immediate direction
+
+Example:
+
+S = Start
+
+G = Goal
+
+H = Hazard
+
+R = Radiation
+
+? = Unknown
+
+. = Safe
+
+The exact map can be designed by you.
+
+Also provide a small random-map option if practical, but the default demonstration MUST be deterministic and guaranteed to finish.
+
+---
+
+# 28. PATH COST
+
+Assign:
+
+Normal movement = cost 1
+
+Investigation/perception = small additional cost if implemented
+
+Hazard/radiation entry = prohibited, NOT a high-cost movement
+
+Track:
+
+Total Path Cost
+
+Number of Moves
+
+Number of Inferences
+
+Number of Resolution Steps
+
+Execution Time
+
+Nodes/Candidates Evaluated
+
+At completion show:
+
+MISSION COMPLETE
+
+Total Moves: X
+
+Path Cost: X
+
+Inference Count: X
+
+Resolution Steps: X
+
+Execution Time: X ms
+
+---
+
+# 29. PERFORMANCE METRICS
+
+The hackathon requires performance metrics in the final portion of the demonstration.
+
+Implement a metrics panel and console output.
+
+At minimum:
+
+* Execution time
+* Path cost
+* Number of moves
+* Number of inference operations
+* Number of resolution operations
+* Number of cells visited
+* Number of unsafe actions rejected
+
+Example:
+
+========== FINAL METRICS ==========
+
+Execution Time: 0.842 sec
+Moves: 11
+Path Cost: 11
+Cells Visited: 9
+Inference Operations: 37
+Resolution Operations: 24
+Unsafe Actions Rejected: 5
+
+Mission Status: SUCCESS
+
+---
+
+# 30. PEAS FRAMEWORK
+
+Include a README section describing PEAS.
+
+### Performance Measure
+
+* Reach goal safely
+* Avoid hazards
+* Avoid radiation
+* Minimize path cost
+* Minimize unnecessary movements
+* Correct logical inference
+
+### Environment
+
+* Mars grid
+* Safe terrain
+* Unknown terrain
+* Hazard zones
+* Radiation zones
+* Goal
+
+### Actuators
+
+* Move Up
+* Move Down
+* Move Left
+* Move Right
+* Investigate
+
+### Sensors
+
+* Hazard sensor
+* Radiation sensor
+* Terrain sensor
+* Goal sensor
+* Adjacent-cell perception
+
+---
+
+# 31. STATE SPACE
+
+Document:
+
+State:
+
+S = (x, y, KB, visited, perception_state)
+
+Initial State:
+
+Starting rover coordinate + initial KB facts.
+
+Actions:
+
+UP
+
+DOWN
+
+LEFT
+
+RIGHT
+
+INVESTIGATE
+
+Goal Test:
+
+Current position == goal position
+
+Path Cost:
+
+Sum of movement/action costs.
+
+---
+
+# 32. COMPLEXITY ANALYSIS
+
+Include theoretical complexity in README.
+
+For resolution:
+
+Explain that propositional resolution/model checking can become computationally expensive as the number of propositions increases.
+
+For model checking over n propositions:
+
+O(2^n)
+
+in the worst case because all truth assignments may need to be examined.
+
+For resolution, explain that worst-case behavior can also be exponential due to clause growth.
+
+Do not make fake overly precise complexity claims for the complete rover system.
+
+Also report actual observed execution metrics separately.
+
+---
+
+# 33. PROJECT STRUCTURE
+
+Create a clean structure such as:
+
+mars_rover/
+│
+├── main.py
+├── environment.py
+├── rover.py
+├── knowledge_base.py
+├── logic.py
+├── resolution.py
+├── model_checker.py
+├── sensors.py
+├── simulation.py
+├── ui.py
+├── metrics.py
+├── README.md
+├── requirements.txt
+└── SUMMARY_TEMPLATE.md
+
+Keep modules understandable.
+
+Do not create unnecessary files.
+
+---
+
+# 34. CODE QUALITY
+
+Use:
+
+* Classes where appropriate
+* Clear function names
+* Type hints where useful
+* Docstrings
+* Comments explaining the AI/logic concepts
+* No unnecessary abstraction
+* No giant 2000-line main.py
+
+Important classes can include:
+
+KnowledgeBase
+
+Proposition
+
+Clause
+
+ResolutionEngine
+
+ModelChecker
+
+MarsEnvironment
+
+SensorSystem
+
+RoverAgent
+
+Simulation
+
+MarsRoverUI
+
+Metrics
+
+---
+
+# 35. README
+
+Create a strong README that explains:
+
+1. Project title
+2. Scenario
+3. Problem statement
+4. Objectives
+5. Technologies
+6. Knowledge-Based Agent architecture
+7. PEAS
+8. State-space formulation
+9. Propositional symbols
+10. Logical rules
+11. CNF conversion
+12. Resolution
+13. Model checking
+14. Forward propagation
+15. Backward reasoning
+16. TELL / ASK
+17. Entailment
+18. Models
+19. Soundness
+20. Completeness
+21. Satisfiability
+22. Validity
+23. Fluents
+24. Successor states
+25. Simulation workflow
+26. Performance metrics
+27. Complexity analysis
+28. How to run
+29. Example console output
+30. Limitations/future improvements
+
+The README should use simple academic language suitable for a BCA AI specialization project.
+
+---
+
+# 36. SUMMARY DOCUMENT
+
+Create a `SUMMARY_TEMPLATE.md` containing the exact content needed for the eventual 1-page technical summary.
+
+Include placeholders for:
+
+* Course Code
+* Group ID
+* Team Members
+* Selected Track
+* GitHub URL
+
+Then:
+
+PEAS Framework
+
+Core Algorithmic Formulation
+
+Logic Rules
+
+Complexity Analysis
+
+Observed Metrics
+
+Do NOT fabricate team names, course codes, group IDs, or GitHub URLs.
+
+Use placeholders such as:
+
+[COURSE CODE]
+
+[GROUP ID]
+
+[MEMBER 1]
+
+[MEMBER 2]
+
+[MEMBER 3]
+
+[GITHUB URL]
+
+---
+
+# 37. HACKATHON REQUIREMENTS
+
+The supplied official instruction sheet says the agent must visually navigate its environment and log its decision-making process in real time.
+
+Therefore, make these NON-NEGOTIABLE:
+
+✓ Visual grid
+
+✓ Autonomous movement
+
+✓ Real-time console logging
+
+✓ Knowledge Base updates
+
+✓ Propositional logic inference
+
+✓ Resolution or model checking
+
+✓ Dynamic reaction to environmental states
+
+✓ Performance metrics
+
+✓ Clean source code
+
+✓ README
+
+The official instructions also expect the demo video to show the visual grid and live console simultaneously, with the middle portion demonstrating the agent reacting to environmental states and the final portion showing metrics. Design the application specifically so this recording is easy.
+
+---
+
+# 38. DEMONSTRATION MODE
+
+Add a button:
+
+START AUTONOMOUS MISSION
+
+When clicked:
+
+1. Reset simulation.
+2. Display initial map.
+3. Initialize KB.
+4. Start rover.
+5. Automatically perform perception.
+6. Update KB.
+7. Run inference.
+8. Display reasoning.
+9. Select action.
+10. Animate movement.
+11. Repeat until goal.
+12. Display metrics.
+
+Add:
+
+PAUSE
+
+RESET
+
+STEP
+
+buttons if practical.
+
+The STEP button is particularly useful for explaining the logic during the viva.
+
+---
+
+# 39. EDUCATIONAL EXPLANATION MODE
+
+Add an optional “Explain Decision” panel.
+
+Whenever the rover makes a decision, display something like:
+
+WHY DID THE ROVER MOVE?
+
+Current Position:
+(2,3)
+
+Candidate:
+(2,4)
+
+Known:
+Hazard_2_4
+
+Rule:
+Hazard_2_4 → ¬MoveForward_2_4
+
+Inference:
+¬MoveForward_2_4
+
+Therefore:
+MOVE RIGHT = REJECTED
+
+Alternative:
+(3,3)
+
+Known:
+Safe_3_3
+
+Inference:
+CanMove_3_3
+
+Therefore:
+MOVE DOWN = ACCEPTED
+
+This will make the project extremely easy to explain during evaluation.
+
+---
+
+# 40. IMPORTANT ACADEMIC CONSTRAINT
+
+Do not replace propositional logic with:
+
+* A* as the main algorithm
+* BFS as the main algorithm
+* DFS as the main algorithm
+* Machine learning
+* Neural networks
+* LLMs
+* Fuzzy logic
+* FOL
+
+A simple local heuristic may be used ONLY to choose between multiple logically safe actions.
+
+The actual safety decision MUST come from the Propositional Logic KB.
+
+This project is specifically:
+
+UNIT 3 — PROPOSITIONAL LOGIC AGENT
+
+not a generic search algorithm project.
+
+---
+
+# 41. DO NOT OVERENGINEER
+
+I need this project working quickly.
+
+Prioritize in this order:
+
+1. Working simulation
+2. Correct Knowledge Base
+3. Correct propositional inference
+4. Resolution
+5. Dynamic KB updates
+6. Live console logs
+7. Visual UI
+8. Metrics
+9. Educational explanations
+10. README polish
+
+If a sophisticated feature threatens reliability, choose the simpler reliable implementation.
+
+The project must be stable before adding cosmetic features.
+
+---
+
+# 42. TESTING
+
+Create basic automated tests for:
+
+### Logic
+
+Test:
+
+P → Q + P ⟹ Q
+
+P → Q + ¬Q ⟹ ¬P
+
+P ∨ Q + ¬P ⟹ Q
+
+P ∧ Q ⟹ P
+
+### CNF
+
+Test implication elimination.
+
+Test biconditional elimination.
+
+Test De Morgan's laws.
+
+Test double negation.
+
+### Resolution
+
+Test known entailed propositions.
+
+Test non-entailed propositions.
+
+Test contradiction.
+
+### Rover
+
+Test:
+
+Safe cell → movement allowed
+
+Hazard → movement rejected
+
+Radiation → movement rejected
+
+Unknown → investigate/perceive
+
+Goal → mission complete
+
+### KB
+
+Test TELL.
+
+Test ASK.
+
+Test RETRACT if implemented.
+
+---
+
+# 43. FINAL VALIDATION
+
+Before declaring the project complete, actually run it.
+
+Verify:
+
+* The window opens.
+* Grid renders correctly.
+* Rover moves automatically.
+* Rover reaches the goal.
+* Hazard causes logical rejection.
+* Radiation causes logical rejection.
+* Unknown cells trigger perception.
+* KB changes dynamically.
+* Console logs appear live.
+* Resolution produces correct results.
+* Model checking, if implemented, produces correct results.
+* Metrics are displayed.
+* RESET works.
+* STEP works.
+* No Python exceptions occur.
+
+Run the full simulation multiple times.
+
+Do not simply say that it works — actually execute and test it.
+
+---
+
+# 44. FINAL OUTPUT EXPECTATION
+
+After development, provide me with:
+
+1. A complete working project.
+2. Clear project structure.
+3. Working `main.py`.
+4. README.md.
+5. requirements.txt.
+6. SUMMARY_TEMPLATE.md.
+7. Test files.
+8. Clear instructions for running locally.
+9. A short explanation of the architecture.
+10. A list of the most important files.
+11. A verification report showing which requirements were tested.
+
+DO NOT handle deployment yet.
+
+DO NOT configure Vercel, Docker deployment, cloud hosting, GitHub Actions, or production infrastructure.
+
+The immediate objective is a **fully working local specialization project ready for demonstration and later deployment**.
+
+---
+
+# 45. SUCCESS CRITERIA
+
+Consider the project successful only if an examiner can watch the simulation and clearly see:
+
+ENVIRONMENT
+↓
+PERCEPTION
+↓
+TELL(KB)
+↓
+KNOWLEDGE BASE UPDATE
+↓
+LOGICAL RULE
+↓
+INFERENCE / RESOLUTION
+↓
+ASK(KB, QUERY)
+↓
+DECISION
+↓
+ACTION
+↓
+SUCCESSOR STATE
+↓
+NEW PERCEPTION
+↓
+UPDATED KB
+
+The most important thing is that the rover's behavior visibly demonstrates **Propositional Logic reasoning**.
+
+Make the project feel like a genuine **Knowledge-Based Autonomous Agent**, while keeping it simple, reliable, visually understandable, and realistic to build within approximately 4 hours.
+
+Start by inspecting the project directory, then implement the complete system. Do not ask me to manually create files unless absolutely necessary. Build, run, test, debug, and verify the complete local project before finishing.

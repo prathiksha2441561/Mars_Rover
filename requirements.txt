@@ -1,0 +1,9 @@
+# Requirements for Autonomous Mars Rover
+# All dependencies are from Python standard library — no pip installs required.
+# Python 3.8+ required.
+
+# tkinter is included with standard Python installations.
+# If tkinter is missing on Linux, install with:
+#   sudo apt-get install python3-tk
+
+# No additional packages required.
