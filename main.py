@@ -4,19 +4,6 @@ main.py
 Entry point for the Autonomous Mars Rover — Propositional Logic
 Knowledge-Based Agent.
 
-Run::
-
-    python main.py                  # Tkinter UI + live console log
-    python main.py --no-ui          # console only (good for a transcript)
-    python main.py --random         # randomly generated map
-    python main.py --seed 7         # choose the random seed
-    python main.py --delay 1200     # slower auto-run, for recording
-    python main.py --demo-rules     # print the inference-rule demonstrations
-
-For the demonstration video, run ``python main.py`` from a terminal and
-place the terminal beside the application window: the same reasoning log
-appears in both, so a single recording shows the grid and the live console
-together.
 """
 
 from __future__ import annotations
