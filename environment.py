@@ -1,8 +1,6 @@
 """
 environment.py
 ==============
-The Mars environment — **ground truth**.
-
     ENVIRONMENT STATE   ≠   ROVER KNOWLEDGE BASE
 
 This module knows the true terrain of every cell.  The rover does not.
